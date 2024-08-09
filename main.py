@@ -17,6 +17,7 @@ from openai import OpenAI
 import munch
 import huggingface_hub
 import requests
+import translators.server as tss
 
 
 #--------------------------#
@@ -146,6 +147,135 @@ if "deepl" in cfg.engines.keys():
         "ukr": "UK"
     }
 
+if "google" in cfg.engines.keys():
+
+    # Create a map of language codes to google languages
+    google_languages = {
+        "afr": "af",
+        "sqi": "sq",
+        "amh": "am",
+        "ara": "ar",
+        "hye": "hy",
+        "asm": "as",
+        "aym": "ay",
+        "aze": "az",
+        "bam": "bm",
+        "eus": "eu",
+        "bel": "be",
+        "ben": "bn",
+        "bho": "bho",
+        "bos": "bs",
+        "bul": "bg",
+        "mya": "my",
+        "cat": "ca",
+        "ceb": "ceb",
+        "zho": "zh-CN",
+        "cos": "co",
+        "hrv": "hr",
+        "ces": "cs",
+        "dan": "da",
+        "div": "dv",
+        "dgo": "doi",
+        "nld": "nl",
+        "eng": "en",
+        "epo": "eo",
+        "est": "et",
+        "ewe": "ee",
+        "fil": "fil",
+        "fin": "fi",
+        "fra": "fr",
+        "fry": "fy",
+        "glg": "gl",
+        "kat": "ka",
+        "deu": "de",
+        "grn": "gn",
+        "guj": "gu",
+        "hat": "ht",
+        "hau": "ha",
+        "haw": "haw",
+        "heb": "he",
+        "hin": "hi",
+        "hmn": "hmn",
+        "hun": "hu",
+        "isl": "is",
+        "ibo": "ig",
+        "ind": "id",
+        "gle": "ga",
+        "ita": "it",
+        "jpn": "ja",
+        "jav": "jv",
+        "kan": "kn",
+        "kaz": "kk",
+        "khm": "km",
+        "kin": "rw",
+        "knn": "gom",
+        "kor": "ko",
+        "kri": "kri",
+        "kur": "ku",
+        "lao": "lo",
+        "lat": "la",
+        "lav": "lv",
+        "lin": "ln",
+        "lit": "lt",
+        "ltz": "lb",
+        "mkd": "mk",
+        "mai": "mai",
+        "mlg": "mg",
+        "zlm": "ms",
+        "mal": "ml",
+        "mlt": "mt",
+        "mni": "mni-Mtei",
+        "mri": "mi",
+        "mar": "mr",
+        "ell": "el",
+        "mon": "mn",
+        "npi": "ne",
+        "nor": "no",
+        "nya": "ny",
+        "ory": "or",
+        "orm": "om",
+        "fas": "fa",
+        "pol": "pl",
+        "por": "pt",
+        "que": "qu",
+        "ron": "ro",
+        "rus": "ru",
+        "smo": "sm",
+        "san": "sa",
+        "gla": "gd",
+        "srp": "sr",
+        "sna": "sn",
+        "snd": "sd",
+        "sin": "si",
+        "slk": "sk",
+        "slv": "sl",
+        "som": "so",
+        "spa": "es",
+        "sun": "su",
+        "swh": "sw",
+        "swe": "sv",
+        "tgl": "tl",
+        "tgk": "tg",
+        "tam": "ta",
+        "tat": "tt",
+        "tel": "te",
+        "tha": "th",
+        "tir": "ti",
+        "tso": "ts",
+        "tur": "tr",
+        "tuk": "tk",
+        "twi": "ak",
+        "ukr": "uk",
+        "urd": "ur",
+        "uzb": "uz",
+        "vie": "vi",
+        "cym": "cy",
+        "xho": "xh",
+        "yid": "yi",
+        "yor": "yo",
+        "zul": "zu"
+    }
+    
 def deepl_translation(text, target_language):
 
     # Process target language code
@@ -172,6 +302,32 @@ def deepl_translation(text, target_language):
             "translation": "", 
             "score": -100, 
             "model": "deepl", 
+            "status": "error: could not get translation"
+        }
+    
+def google_translation(text, source_language, target_language):
+
+    # Initialize the google translator
+    from_language=google_languages[source_language]
+    to_language=google_languages[target_language]
+
+    # Get the translation
+    response = tss.google(text, from_language, to_language)
+
+    # Process the response
+    if response is not None and response.strip():
+        qa_input = QAInput(source=text, translation=response)
+        score = get_quality_score(qa_input).score
+        return {
+            "translation": response, 
+            "score": score, 
+            "model": "google", 
+            "status": "success"}
+    else:
+        return {
+            "translation": "", 
+            "score": -100, 
+            "model": "google", 
             "status": "error: could not get translation"
         }
 
@@ -284,6 +440,8 @@ def translate_and_score(text, source_language_iso639, target_language_iso639):
         try:
             if model == "deepl":
                 result = deepl_translation(text, target_language_iso639)
+            elif model == "google":
+                result = google_translation(text, target_language_iso639)
             elif "predictionguard" in model:
                 result = pg_openai_translation(
                     text, 
