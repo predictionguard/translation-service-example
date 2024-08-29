@@ -12,3 +12,4 @@ openai
 munch
 huggingface_hub
 requests
+google-cloud-translate

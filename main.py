@@ -17,7 +17,7 @@ from openai import OpenAI
 import munch
 import huggingface_hub
 import requests
-
+from google.cloud import translate_v2 as translate
 
 #--------------------------#
 #         Config           #
@@ -146,6 +146,145 @@ if "deepl" in cfg.engines.keys():
         "ukr": "UK"
     }
 
+if "google" in cfg.engines.keys():
+
+    # Create a map of ISO 639-3 language codes to Google Translate languages (ISO 639-1)
+    google_languages = {
+        "afr": "af",  # Afrikaans
+        "sqi": "sq",  # Albanian
+        "amh": "am",  # Amharic
+        "ara": "ar",  # Arabic
+        "hye": "hy",  # Armenian
+        "asm": "as",  # Assamese
+        "aym": "ay",  # Aymara
+        "aze": "az",  # Azerbaijani
+        "bam": "bm",  # Bambara
+        "eus": "eu",  # Basque
+        "bel": "be",  # Belarusian
+        "ben": "bn",  # Bengali
+        "bho": "bho", # Bhojpuri
+        "bos": "bs",  # Bosnian
+        "bul": "bg",  # Bulgarian
+        "cat": "ca",  # Catalan
+        "ceb": "ceb", # Cebuano
+        "zho": "zh",  # Chinese
+        "cos": "co",  # Corsican
+        "hrv": "hr",  # Croatian
+        "ces": "cs",  # Czech
+        "dan": "da",  # Danish
+        "div": "dv",  # Dhivehi
+        "doi": "doi", # Dogri
+        "nld": "nl",  # Dutch
+        "eng": "en",  # English
+        "epo": "eo",  # Esperanto
+        "est": "et",  # Estonian
+        "ewe": "ee",  # Ewe
+        "fil": "tl",  # Filipino (Tagalog)
+        "fin": "fi",  # Finnish
+        "fra": "fr",  # French
+        "fry": "fy",  # Frisian
+        "glg": "gl",  # Galician
+        "kat": "ka",  # Georgian
+        "deu": "de",  # German
+        "ell": "el",  # Greek
+        "grn": "gn",  # Guarani
+        "guj": "gu",  # Gujarati
+        "hat": "ht",  # Haitian Creole
+        "hau": "ha",  # Hausa
+        "haw": "haw", # Hawaiian
+        "heb": "he",  # Hebrew
+        "hin": "hi",  # Hindi
+        "hmn": "hmn", # Hmong
+        "hun": "hu",  # Hungarian
+        "isl": "is",  # Icelandic
+        "ibo": "ig",  # Igbo
+        "ilo": "ilo", # Ilocano
+        "ind": "id",  # Indonesian
+        "gle": "ga",  # Irish
+        "ita": "it",  # Italian
+        "jpn": "ja",  # Japanese
+        "jav": "jv",  # Javanese
+        "kan": "kn",  # Kannada
+        "kaz": "kk",  # Kazakh
+        "khm": "km",  # Khmer
+        "kin": "rw",  # Kinyarwanda
+        "gom": "gom", # Konkani
+        "kor": "ko",  # Korean
+        "kri": "kri", # Krio
+        "kur": "ku",  # Kurdish
+        "ckb": "ckb", # Kurdish (Sorani)
+        "kir": "ky",  # Kyrgyz
+        "lao": "lo",  # Lao
+        "lat": "la",  # Latin
+        "lav": "lv",  # Latvian
+        "lin": "ln",  # Lingala
+        "lit": "lt",  # Lithuanian
+        "lug": "lg",  # Luganda
+        "ltz": "lb",  # Luxembourgish
+        "mkd": "mk",  # Macedonian
+        "mai": "mai", # Maithili
+        "mlg": "mg",  # Malagasy
+        "msa": "ms",  # Malay
+        "mal": "ml",  # Malayalam
+        "mlt": "mt",  # Maltese
+        "mri": "mi",  # Maori
+        "mar": "mr",  # Marathi
+        "mni": "mni-Mtei", # Meiteilon (Manipuri)
+        "lus": "lus", # Mizo
+        "mon": "mn",  # Mongolian
+        "mya": "my",  # Burmese
+        "nep": "ne",  # Nepali
+        "nob": "no",  # Norwegian
+        "nya": "ny",  # Nyanja (Chichewa)
+        "ori": "or",  # Odia (Oriya)
+        "orm": "om",  # Oromo
+        "pus": "ps",  # Pashto
+        "fas": "fa",  # Persian
+        "pol": "pl",  # Polish
+        "por": "pt",  # Portuguese
+        "pan": "pa",  # Punjabi
+        "que": "qu",  # Quechua
+        "ron": "ro",  # Romanian
+        "rus": "ru",  # Russian
+        "smo": "sm",  # Samoan
+        "san": "sa",  # Sanskrit
+        "gla": "gd",  # Scots Gaelic
+        "nso": "nso", # Sepedi
+        "srp": "sr",  # Serbian
+        "sot": "st",  # Sesotho
+        "sna": "sn",  # Shona
+        "snd": "sd",  # Sindhi
+        "sin": "si",  # Sinhala
+        "slk": "sk",  # Slovak
+        "slv": "sl",  # Slovenian
+        "som": "so",  # Somali
+        "spa": "es",  # Spanish
+        "sun": "su",  # Sundanese
+        "swa": "sw",  # Swahili
+        "swe": "sv",  # Swedish
+        "tgl": "tl",  # Tagalog (Filipino)
+        "tgk": "tg",  # Tajik
+        "tam": "ta",  # Tamil
+        "tat": "tt",  # Tatar
+        "tel": "te",  # Telugu
+        "tha": "th",  # Thai
+        "tir": "ti",  # Tigrinya
+        "tso": "ts",  # Tsonga
+        "tur": "tr",  # Turkish
+        "tuk": "tk",  # Turkmen
+        "twi": "ak",  # Twi (Akan)
+        "ukr": "uk",  # Ukrainian
+        "urd": "ur",  # Urdu
+        "uig": "ug",  # Uyghur
+        "uzb": "uz",  # Uzbek
+        "vie": "vi",  # Vietnamese
+        "cym": "cy",  # Welsh
+        "xho": "xh",  # Xhosa
+        "yid": "yi",  # Yiddish
+        "yor": "yo",  # Yoruba
+        "zul": "zu"   # Zulu
+    }
+
 def deepl_translation(text, target_language):
 
     # Process target language code
@@ -176,6 +315,36 @@ def deepl_translation(text, target_language):
         }
 
 
+
+
+# Function to handle Google Cloud Translation
+def google_translation(text, source_language, target_language):
+
+    # Process target language code
+    target_language = google_languages[target_language]
+    source_language = google_languages[source_language]
+
+    # Initialize the Google Cloud Translation client
+    google_translate_client = translate.Client(api_key=cfg.engines.google.api_key)
+
+    try:
+        # Translate text using Google Cloud Translation API
+        response = google_translate_client.translate(
+            text,
+            source_language=source_language,
+            target_language=target_language
+        )
+        translated_text = response.get('translatedText')
+        if translated_text:
+            qa_input = QAInput(source=text, translation=translated_text)
+            score = get_quality_score(qa_input).score
+            return {"translation": translated_text, "score": score, "model": "google", "status": "success"}
+        else:
+            return {"translation": "", "score": -100, "model": "google", "status": "error: couldn’t get translation"}
+    except Exception as e:
+        print(e)
+        return {"translation": "", "score": -100, "model": "google", "status": "error: couldn’t get translation"}
+    
 def pg_openai_translation(text, source_language, target_language, model):
 
     # Initialize the client
@@ -258,7 +427,6 @@ def custom_translation(text, source_language, target_language, model):
 #-----------------------------------------#
 
 def translate_and_score(text, source_language_iso639, target_language_iso639):
-
     translation_results = []
     best_translation = None
     best_score = -1
@@ -298,6 +466,8 @@ def translate_and_score(text, source_language_iso639, target_language_iso639):
                     target_language_iso639, 
                     cfg.engines.openai.model
                 )
+            elif model == "google":
+                result = google_translation(text, source_language_iso639, target_language_iso639)
             elif "custom" in model:
                 result = custom_translation(
                     text, 
@@ -339,7 +509,6 @@ def translate_and_score(text, source_language_iso639, target_language_iso639):
     }
 
     return output
-
 
 #---------------------#
 # FastAPI app         #
