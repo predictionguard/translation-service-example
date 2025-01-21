@@ -102,7 +102,7 @@ def get_quality_score(input: QAInput):
         "src": input.source,
         "mt": input.translation,
     }]
-    model_output = comet_model.predict(data, batch_size=8, gpus=0)
+    model_output = comet_model.predict(data, batch_size=8, gpus=0,num_workers=1)
     return QAOutput(score=model_output.system_score)
 
 
