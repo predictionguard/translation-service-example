@@ -189,9 +189,11 @@ def pg_openai_translation(text, source_language, target_language, model, cfg):
         client = OpenAI(api_key=cfg.engines.openai.api_key)
     else:
         DEFAULT_URL = "https://api.predictionguard.com"
-        url = cfg.engines.predictionguard.url
-        if not url:
+        predictionguard_engine = cfg.engines.predictionguard
+        if 'url' not in predictionguard_engine.keys():
             url = DEFAULT_URL
+        else:
+            url = predictionguard_engine.url
         client = PredictionGuard(api_key=cfg.engines.predictionguard.api_key, url=url)
 
     # Call the API
