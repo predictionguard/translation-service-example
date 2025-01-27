@@ -7,6 +7,7 @@ huggingface:
 
 engines:
   predictionguard:
+    url: https://api.predictionguard.com # use default or https://your-predictionguard.predictionguard.com
     api_key: your-predictionguard-api-key
     models:
       Hermes-2-Pro-Llama-3-8B:

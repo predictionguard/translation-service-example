@@ -1,0 +1,8 @@
+*.json
+*.ipynb
+*.tab
+*.csv
+*.txt
+!requirements.txt
+*.yml
+!config_template.yml

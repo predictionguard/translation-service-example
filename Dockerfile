@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y git && \
 
 # Copy your Python application files into the image
 COPY *.py .
-COPY languages.csv .
+# COPY languages.csv .
 
 # Specify the command to run your Python application
 CMD ["python", "translate.py"]
