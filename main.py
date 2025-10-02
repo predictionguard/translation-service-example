@@ -366,6 +366,16 @@ def read_root():
     return {"status": "healthy"}
 
 
+@app.get("/models")
+def get_models(workspace_config: Annotated[str | None, Header()] = None):
+    if workspace_config != None:
+        cfg = munch.munchify(json.loads(str(workspace_config)))
+    else:
+        cfg = initial_cfg
+    
+    supported_models = get_supported_models(cfg)
+    return {"models": supported_models}
+
 class TranslateRequest(BaseModel):
     text: str
     source_lang: str
