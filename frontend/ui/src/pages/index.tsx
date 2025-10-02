@@ -40,9 +40,6 @@ const Index = () => {
             <Typography variant="h4" gutterBottom>
               Multi-Engine Translation
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem' }}>
-              Powered by Prediction Guard, DeepL, and OpenAI
-            </Typography>
           </Box>
 
           <TranslationInterface />
