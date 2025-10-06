@@ -167,6 +167,7 @@ def deepl_translation(text, target_language, cfg):
     if response is not None and response.strip():
         qa_input = QAInput(source=text, translation=response)
         score = get_quality_score(qa_input).score
+        print(f"✅ Successfully used DeepL for translation (score: {score:.3f})")
         return {
             "translation": response, 
             "score": score, 
@@ -174,6 +175,7 @@ def deepl_translation(text, target_language, cfg):
             "status": "success"
         }
     else:
+        print(f"❌ DeepL failed: could not get translation")
         return {
             "translation": "", 
             "score": -100, 
@@ -182,19 +184,62 @@ def deepl_translation(text, target_language, cfg):
         }
 
 
+def get_api_url(model, cfg):
+    """Get the appropriate PredictionGuard API URL for a given model."""
+    DEFAULT_URL = "https://api.predictionguard.com"
+    predictionguard_engine = cfg.engines.predictionguard
+    
+    # Check for per-model api_url first
+    try:
+        model_config = predictionguard_engine.models[model]
+        if hasattr(model_config, 'api_url'):
+            url = model_config.api_url
+            print(f"Using per-model API URL for {model}: {url}")
+            return url
+    except (KeyError, AttributeError):
+        pass
+    
+    # Fall back to global engine URL
+    if hasattr(predictionguard_engine, 'url'):
+        url = predictionguard_engine.url
+        print(f"Using global engine URL for {model}: {url}")
+        return url
+    
+    # Default fallback
+    print(f"Using default URL for {model}: {DEFAULT_URL}")
+    return DEFAULT_URL
+
+
+def get_api_key(model, cfg):
+    """Get the appropriate API key for a given model."""
+    predictionguard_engine = cfg.engines.predictionguard
+    
+    # Check for per-model api_key first
+    try:
+        model_config = predictionguard_engine.models[model]
+        if hasattr(model_config, 'api_key'):
+            api_key = model_config.api_key
+            print(f"Using per-model API key for {model}")
+            return api_key
+    except (KeyError, AttributeError):
+        pass
+    
+    # Fall back to global engine API key
+    print(f"Using global engine API key for {model}")
+    return predictionguard_engine.api_key
+
+
 def pg_openai_translation(text, source_language, target_language, model, cfg):
 
     # Initialize the client
     if "gpt" in model:
         client = OpenAI(api_key=cfg.engines.openai.api_key)
     else:
-        DEFAULT_URL = "https://api.predictionguard.com"
-        predictionguard_engine = cfg.engines.predictionguard
-        if 'url' not in predictionguard_engine.keys():
-            url = DEFAULT_URL
-        else:
-            url = predictionguard_engine.url
-        client = PredictionGuard(api_key=cfg.engines.predictionguard.api_key, url=url)
+        url = get_api_url(model, cfg)
+        api_key = get_api_key(model, cfg)
+        print(f"Initializing PredictionGuard client for {model} with URL: {url}")
+        print(f"API Key (first 10 chars): {api_key[:10]}...")
+        client = PredictionGuard(api_key=api_key, url=url)
 
     # Call the API
     result = client.chat.completions.create(
@@ -215,16 +260,18 @@ def pg_openai_translation(text, source_language, target_language, model, cfg):
     if response_message:
         qa_input = QAInput(source=text, translation=response_message)
         score = get_quality_score(qa_input).score
+        print(f"✅ Successfully used model {model} for translation (score: {score:.3f})")
         return {
             "translation": response_message, 
             "score": score, 
-            "model": "openai", 
+            "model": model, 
             "status": "success"}
     else:
+        print(f"❌ Model {model} failed: could not get translation")
         return {
             "translation": "", 
             "score": -100, "model": 
-            "openai", "status": 
+            model, "status": 
             "error: could not get translation"
         }
     
@@ -251,12 +298,14 @@ def custom_translation(text, source_language, target_language, model, cfg):
     if 'translation' in response.keys() and len(response['translation']) > 0:
         qa_input = QAInput(source=text, translation=response['translation'])
         score = get_quality_score(qa_input).score
+        print(f"✅ Successfully used custom model {model} for translation (score: {score:.3f})")
         return {
             "translation": response['translation'], 
             "score": score, 
             "model": "custom",
             "status": "success"}
     else:
+        print(f"❌ Custom model {model} failed: could not get translation")
         return {
             "translation": "", 
             "score": -100, 
@@ -343,6 +392,12 @@ def translate_and_score(text, source_language_iso639, target_language_iso639, cf
                 best_translation = result["translation"]
                 best_score = result["score"]
                 best_model = result["model"]
+
+    # Log the best model selection
+    if best_model:
+        print(f"🏆 Best translation selected: {best_model} (score: {best_score:.3f})")
+    else:
+        print("❌ No successful translations found")
 
     output = {
         "translations": translation_results,
