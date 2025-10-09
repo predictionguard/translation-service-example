@@ -1,0 +1,42 @@
+config.yml
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# testing
+coverage
+
+# production
+.next
+.swc
+_static
+out
+dist
+build
+
+# misc
+.DS_Store
+.vercel
+.netlify
+tsconfig.tsbuildinfo
+.ncurc.js
+
+*.pem
+
+src/assets/config
+
+# environment variables
+.env
+.env.local
+.env.staging
+.env.production
+iso-639-3.tab

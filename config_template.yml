@@ -107,6 +107,33 @@ engines:
         languages:
           - eng
           - cmn
+      Tower-Plus-9B:
+        api_url: https://globalpath.predictionguard.com
+        api_key: your-globalpath-api-key  
+        languages:
+          - deu
+          - spa
+          - fra
+          - ita
+          - kor
+          - nld
+          - rus
+          - eng
+          - por
+          - zho
+          - ces
+          - ukr
+          - hin
+          - isl
+          - jpn
+          - pol
+          - swe
+          - hun
+          - ron
+          - dan
+          - nno
+          - nob
+          - fin
   deepl:
     api_key: your-deepl-api-key
     languages:
